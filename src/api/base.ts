@@ -8,8 +8,21 @@ import { useAuthStore } from "@/store/useAuthStore";
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
+// Используем прокси через Next.js вместо прямого обращения к API
+export const USE_API_PROXY = true;
+
+export const getApiUrl = (path: string) => {
+  if (USE_API_PROXY) {
+    // В браузере используем относительный путь для прокси через Next.js
+    return typeof window !== 'undefined'
+      ? `/api${path}`
+      : `${API_BASE_URL}${path}`;
+  }
+  return `${API_BASE_URL}${path}`;
+};
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: USE_API_PROXY ? (typeof window !== 'undefined' ? '/api' : API_BASE_URL) : API_BASE_URL,
   timeout: 15_000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },

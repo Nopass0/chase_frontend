@@ -1,4 +1,5 @@
-const path = require('path');
+// @ts-check
+import path from 'path';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -7,7 +8,7 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(process.cwd(), './src'),
     };
     return config;
   },
@@ -39,17 +40,24 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverActions: true,
-  },
-  headers: async () => {
+  // Используем секцию асинхронных headers для добавления CSP-заголовков
+  async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/:path*',
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; connect-src 'self' http://95.163.152.102:3000 ws:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' http://95.163.152.102:3000 data:; font-src 'self' data:; frame-src 'self';`,
+            value: `
+              default-src 'self';
+              img-src 'self' http://95.163.152.102:3000 data: blob:;
+              connect-src 'self' http://95.163.152.102:3000 ws: wss:;
+              script-src 'self' 'unsafe-inline' 'unsafe-eval';
+              style-src 'self' 'unsafe-inline';
+              font-src 'self' data:;
+              frame-src 'self';
+              upgrade-insecure-requests;
+            `.replace(/\s+/g, ' ').trim(),
           },
         ],
       },
@@ -57,4 +65,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
