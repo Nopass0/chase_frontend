@@ -1,6 +1,17 @@
 import api from "@/api/base";
 import { z } from "zod";
 
+export const DeviceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  energy: z.number().nullable(),
+  ethernetSpeed: z.number().nullable(),
+  isOnline: z.boolean(),
+  token: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export const BankDetailSchema = z.object({
   id: z.string(),
   cardNumber: z.string(),
@@ -11,6 +22,7 @@ export const BankDetailSchema = z.object({
   maxAmount: z.number(),
   dailyLimit: z.number(),
   monthlyLimit: z.number(),
+  maxCountTransactions: z.number().nullable(),
   intervalMinutes: z.number(),
   methodType: z.string(),
   turnoverDay: z.number(),
@@ -18,8 +30,11 @@ export const BankDetailSchema = z.object({
   isArchived: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  hasDevice: z.boolean(),
+  device: DeviceSchema.optional(),
 });
 
+export type Device = z.infer<typeof DeviceSchema>;
 export type BankDetail = z.infer<typeof BankDetailSchema>;
 
 const parse = <T>(s: z.ZodType<T>, d: unknown) => s.parse(d);

@@ -29,13 +29,25 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Archive, Undo2, Pen, QrCode } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Archive,
+  Undo2,
+  Pen,
+  QrCode,
+  Smartphone,
+  BatteryCharging,
+  Wifi
+} from "lucide-react";
 import {
   useBankDetails,
   useCreateBankDetail,
   useArchiveBankDetail,
 } from "@/hooks/useBankDetails";
 import RequisiteQRModal from "../_sections/RequisiteQRModal";
+import BankDetailDeviceModal from "../_sections/BankDetailDeviceModal";
+import { Device } from "@/api/bankDetails";
 
 /* ---------- константы из enum ---------- */
 const BANK_TYPES = [
@@ -108,6 +120,9 @@ export default function BankDetailsPage() {
 
   const [openQR, setOpenQR] = useState(false);
   const [qrId, setQrId] = useState<string | null>(null);
+
+  const [openDeviceModal, setOpenDeviceModal] = useState(false);
+  const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
 
   /* ---------- queries ---------- */
   const { data, isLoading, isError } = useBankDetails({
@@ -192,6 +207,11 @@ export default function BankDetailsPage() {
     setOpenQR(true);
   };
 
+  const openDeviceInfo = (device: Device) => {
+    setCurrentDevice(device);
+    setOpenDeviceModal(true);
+  };
+
   /* ---------- render ---------- */
   return (
     <div className="p-6 space-y-6">
@@ -216,7 +236,7 @@ export default function BankDetailsPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-      ) : isError ? (
+      ) : isError || !data || data.length === 0 ? (
         <p className="text-destructive">Не удалось загрузить данные.</p>
       ) : (
         <div className="overflow-auto rounded-lg border shadow-sm">
@@ -236,7 +256,7 @@ export default function BankDetailsPage() {
             </TableHeader>
 
             <TableBody>
-              {data?.map((d) => (
+              {data.map((d) => (
                 <TableRow key={d.id} className="hover:bg-muted/50">
                   <TableCell>{d.cardNumber}</TableCell>
                   <TableCell>{d.bankType}</TableCell>
@@ -257,15 +277,63 @@ export default function BankDetailsPage() {
 
                   {/* действия */}
                   <TableCell className="flex gap-2">
-                    {/* QR-код */}
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => openQRModal(d.id)}
-                      aria-label="QR-код"
-                    >
-                      <QrCode className="h-4 w-4" />
-                    </Button>
+                    {/* Устройство или QR-код для подключения */}
+                    {d.hasDevice && d.device ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDeviceInfo(d.device!)}
+                        className="relative pl-6"
+                      >
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                          <span className={`w-2 h-2 rounded-full ${d.device.isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                          {d.device.isOnline && (
+                            <span className="absolute w-3 h-3 rounded-full bg-green-500 opacity-60 animate-ping"></span>
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Smartphone className="h-3.5 w-3.5" />
+                          {d.device.name}
+                          <BatteryCharging
+                            className={`h-3.5 w-3.5 ml-1 ${
+                              d.device.energy > 70 ? 'text-green-500' :
+                              d.device.energy > 30 ? 'text-yellow-500' :
+                              'text-red-500'
+                            }`}
+                          />
+                          <span className={`text-xs ${
+                            d.device.energy > 70 ? 'text-green-500' :
+                            d.device.energy > 30 ? 'text-yellow-500' :
+                            'text-red-500'
+                          }`}>
+                            {d.device.energy}%
+                          </span>
+                          <Wifi
+                            className={`h-3.5 w-3.5 ${
+                              d.device.ethernetSpeed > 5 ? 'text-blue-500' :
+                              d.device.ethernetSpeed > 2 ? 'text-teal-500' :
+                              'text-orange-500'
+                            }`}
+                          />
+                          <span className={`text-xs ${
+                            d.device.ethernetSpeed > 5 ? 'text-blue-500' :
+                            d.device.ethernetSpeed > 2 ? 'text-teal-500' :
+                            'text-orange-500'
+                          }`}>
+                            {d.device.ethernetSpeed}
+                          </span>
+                        </span>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openQRModal(d.id)}
+                        aria-label="QR-код для подключения устройства"
+                      >
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                    )}
 
                     {/* редактировать */}
                     <Button
@@ -442,6 +510,13 @@ export default function BankDetailsPage() {
         open={openQR}
         onOpenChange={setOpenQR}
         requisiteId={qrId}
+      />
+
+      {/* модалка с информацией об устройстве */}
+      <BankDetailDeviceModal
+        open={openDeviceModal}
+        onOpenChange={setOpenDeviceModal}
+        device={currentDevice}
       />
     </div>
   );
