@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/hooks/useTheme";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
-export default function AdminAuth() {
+function AuthContent() {
   const [token, setToken] = useState("");
   const { login } = useAdminAuth();
   const { theme, toggleTheme } = useTheme();
@@ -145,5 +145,13 @@ export default function AdminAuth() {
       {/* toast-контейнер */}
       <Toaster position="top-center" richColors closeButton />
     </div>
+  );
+}
+
+export default function AdminAuth() {
+  return (
+    <Suspense fallback={<div>Загрузка...</div>}>
+      <AuthContent />
+    </Suspense>
   );
 }
